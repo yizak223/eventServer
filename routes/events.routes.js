@@ -1,59 +1,69 @@
 const { Router } = require('express')
 const router = Router()
+const { Event } = require('../modules/events.model')
 
-let events = [
-    {
-        id: 1,
-        title: 'Pool Party ',
-        description: 'A pool party',
-        date: '2024-02-15',
-        time: '21:00:00'
-    },
-    {
-        id: 2,
-        title: 'Dinner',
-        description: 'A dinner at the restaurant',
-        date: '2024-02-17',
-        time: '19:00:00'
+let events = []
+router.get("/", async (req, res) => {
+    try {
+        const events = await Event.find({})
+        res.send({ events })
+    }catch (err) {
+        res.status(400).send('error')
     }
-]
-router.get("/", (req, res) => {
-    res.send(events)
 })
 
-router.post("/", (req, res) => {
+router.post("/",async (req, res) => {
     const body = req.body
-    events.push(body)
-    res.send({ message: 'success', data: body })
+    try{
+        const newEvent = new Event(body)
+        await newEvent.save()
+        res.send({message:'Added event', data:body})
+    }catch(err){
+        res.status(400).send('error')
+    }
 })
 
-router.delete("/:id", (req, res) => {
+router.delete("/:id",async (req, res) => {
     const id = req.params.id
-    const eventToDelete = events.find(event => event.id == id);
-    console.log(eventToDelete);
-    if (!eventToDelete) {
-        return res.status(404).send({ message: 'Event not found' });
+    try{
+        await Event.findByIdAndDelete(id)
+        res.send({message:'Deleted event'})
+    }catch(err){
+        console.log(err);
+        res.status(400).send('error')
     }
-    const index = events.indexOf(eventToDelete);
-    events.splice(index, 1);
-    res.send({ message: 'delete' });
+    // const eventToDelete = events.find(event => event.id == id);
+    // console.log(eventToDelete);
+    // if (!eventToDelete) {
+    //     return res.status(404).send({ message: 'Event not found' });
+    // }
+    // const index = events.indexOf(eventToDelete);
+    // events.splice(index, 1);
+    // res.send({ message: 'delete' });
 });
 
-router.patch("/:id", (req, res) => {
+router.patch("/:id", async(req, res) => {
     const id = req.params.id
     const updateFields = req.body;
-    const eventToUpdate = events.find(event => event.id == id);
-    if (!eventToUpdate) {
-        return res.status(404).send({ message: 'Event not found' });
+    try{
+        await Event.findByIdAndUpdate(id, updateFields)
+        res.send({message:'update event'})
+    }catch(err){
+        console.log(err);
+        res.status(400).send('error')
     }
-    console.log(req.body);
-    events = events.map(event => {
-        if (event.id == id) {
-            return { ...event, ...updateFields }
-        }
-        return event;
-    })
-    res.send({ message: 'update', data: eventToUpdate });
+    // const eventToUpdate = events.find(event => event.id == id);
+    // if (!eventToUpdate) {
+    //     return res.status(404).send({ message: 'Event not found' });
+    // }
+    // console.log(req.body);
+    // events = events.map(event => {
+    //     if (event.id == id) {
+    //         return { ...event, ...updateFields }
+    //     }
+    //     return event;
+    // })
+    // res.send({ message: 'update', data: eventToUpdate });
 });
 
 router.put("/:id", (req, res) => {
@@ -77,4 +87,4 @@ router.put("/:id", (req, res) => {
 
 })
 
-module.exports =  router 
+module.exports = router 
